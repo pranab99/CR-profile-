@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ladder Log — Clash Royale Battle Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=general-sans@400,500,600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<style>
+  :root{
+    --bg:#0A0D1E;
+    --bg-2:#0E1230;
+    --surface:#151A38;
+    --surface-hi:#1C2247;
+    --line:#262C54;
+    --text:#EDEFF7;
+    --muted:#8A8FBF;
+    --gold:#F5B942;
+    --elixir:#A855F7;
+    --win:#34D399;
+    --loss:#FB7185;
+    --draw:#8A8FBF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(168,85,247,0.16), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(245,185,66,0.10), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'General Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .display{font-family:'Clash Display', 'General Sans', sans-serif;}
+  a{color:inherit;}
+
+  /* ---------- shell ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:2rem 1.25rem 5rem;}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:2.5rem;flex-wrap:wrap;}
+  .brand{display:flex;align-items:baseline;gap:.6rem;}
+  .brand .mark{width:10px;height:10px;border-radius:2px;background:linear-gradient(135deg,var(--gold),var(--elixir));transform:rotate(45deg);}
+  .brand h1{font-size:1.05rem;letter-spacing:.02em;margin:0;font-weight:600;}
+  .brand .sub{color:var(--muted);font-size:.85rem;}
+
+  .range-pills{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;}
+  .range-pills button{
+    border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:.82rem;
+    padding:.4rem .85rem;border-radius:999px;cursor:pointer;transition:background .2s,color .2s;
+  }
+  .range-pills button.active{background:var(--surface-hi);color:var(--text);}
+
+  /* ---------- hero ---------- */
+  .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:2.5rem;align-items:center;padding:2.25rem 0 2.75rem;border-bottom:1px solid var(--line);}
+  @media(max-width:760px){.hero{grid-template-columns:1fr;gap:1.75rem;}}
+  .hero-num{font-family:'Clash Display',sans-serif;font-weight:700;font-size:clamp(4rem,11vw,6.5rem);line-height:.92;letter-spacing:-.02em;
+    background:linear-gradient(135deg,#fff 20%,var(--gold) 75%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero-label{color:var(--muted);font-size:.95rem;margin-top:.5rem;}
+  .hero-record{display:flex;gap:1.25rem;margin-top:1.25rem;font-size:.9rem;}
+  .hero-record b{font-size:1.15rem;display:block;font-family:'Clash Display',sans-serif;}
+  .hero-record .w b{color:var(--win);} .hero-record .l b{color:var(--loss);} .hero-record .d b{color:var(--draw);}
+  .streak-badge{display:inline-flex;align-items:center;gap:.5rem;margin-top:1.25rem;padding:.45rem .8rem;border:1px solid var(--line);border-radius:999px;font-size:.82rem;color:var(--muted);}
+  .streak-badge .dot{width:7px;height:7px;border-radius:50%;}
+  #ringWrap{position:relative;display:flex;align-items:center;justify-content:center;}
+  #ringChart{max-width:230px;}
+  .ring-center{position:absolute;text-align:center;pointer-events:none;}
+  .ring-center .n{font-family:'Clash Display',sans-serif;font-weight:700;font-size:1.5rem;}
+  .ring-center .l{color:var(--muted);font-size:.72rem;margin-top:.15rem;}
+
+  /* ---------- trophy trend ---------- */
+  section{padding:2.5rem 0;border-bottom:1px solid var(--line);}
+  .sec-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1.25rem;gap:1rem;flex-wrap:wrap;}
+  .sec-head h2{font-family:'Clash Display',sans-serif;font-size:1.15rem;font-weight:600;margin:0;}
+  .sec-head .note{color:var(--muted);font-size:.82rem;}
+  .chart-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.25rem 1.25rem .5rem;}
+
+  /* ---------- stat tiles (asymmetric) ---------- */
+  .tiles{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  @media(max-width:700px){.tiles{grid-template-columns:1fr 1fr;}}
+  .tile{background:var(--surface);padding:1.4rem 1.5rem;}
+  .tile .n{font-family:'Clash Display',sans-serif;font-weight:700;font-size:2rem;}
+  .tile .l{color:var(--muted);font-size:.8rem;margin-top:.35rem;}
+  .tile.wide{grid-row:span 2;display:flex;flex-direction:column;justify-content:center;}
+  .tile.wide .n{font-size:2.4rem;}
+
+  /* ---------- decks ---------- */
+  .deck-row{display:grid;grid-template-columns:1fr auto 90px;align-items:center;gap:1rem;padding:.85rem 0;border-bottom:1px solid var(--line);}
+  .deck-row:last-child{border-bottom:none;}
+  .deck-cards{font-size:.78rem;color:var(--muted);line-height:1.5;}
+  .deck-games{font-size:.78rem;color:var(--muted);white-space:nowrap;}
+  .bar-wrap{width:90px;height:8px;background:var(--surface-hi);border-radius:99px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--elixir),var(--gold));}
+  .deck-wr{font-family:'Clash Display',sans-serif;font-weight:700;font-size:.95rem;text-align:right;}
+
+  /* ---------- cards faced ---------- */
+  .card-freq{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem 1.5rem;}
+  @media(max-width:600px){.card-freq{grid-template-columns:1fr;}}
+  .cf-row{display:grid;grid-template-columns:1fr 40px;align-items:center;gap:.6rem;font-size:.85rem;}
+  .cf-bar{height:6px;background:var(--surface-hi);border-radius:99px;overflow:hidden;margin-top:.3rem;}
+  .cf-fill{height:100%;background:var(--elixir);border-radius:99px;}
+  .cf-n{color:var(--muted);text-align:right;font-size:.78rem;}
+
+  /* ---------- heatmap ---------- */
+  #heatmap{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;}
+  .hm-cell{aspect-ratio:1;border-radius:3px;background:var(--surface-hi);}
+  .hm-legend{display:flex;align-items:center;gap:.4rem;color:var(--muted);font-size:.75rem;margin-top:.75rem;}
+
+  /* ---------- battle log ---------- */
+  .log{max-height:420px;overflow-y:auto;}
+  .log-row{display:grid;grid-template-columns:10px 1fr auto auto;align-items:center;gap:1rem;padding:.7rem 0;border-bottom:1px solid var(--line);font-size:.87rem;}
+  .log-row:last-child{border-bottom:none;}
+  .res-dot{width:8px;height:8px;border-radius:50%;}
+  .log-opp{color:var(--text);} .log-opp .tag{color:var(--muted);font-size:.78rem;margin-left:.4rem;}
+  .log-crowns{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .log-trophy{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .log-trophy.pos{color:var(--win);} .log-trophy.neg{color:var(--loss);} .log-trophy.zero{color:var(--draw);}
+
+  footer{color:var(--muted);font-size:.78rem;text-align:center;padding-top:2.5rem;}
+
+  /* ---------- loading / setup gate ---------- */
+  #gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center;}
+  #gate .box{max-width:420px;}
+  #gate h2{font-family:'Clash Display',sans-serif;}
+  #gate p{color:var(--muted);font-size:.9rem;line-height:1.6;}
+  #gate input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.65rem .8rem;color:var(--text);font-family:inherit;margin-top:.6rem;}
+  #gate button{margin-top:1rem;background:linear-gradient(135deg,var(--elixir),var(--gold));border:none;color:#0A0D1E;font-weight:600;padding:.65rem 1.4rem;border-radius:999px;cursor:pointer;font-family:inherit;}
+  #gate .err{color:var(--loss);font-size:.82rem;margin-top:.8rem;}
+  .spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:spin .8s linear infinite;margin:0 auto 1rem;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  #app{display:none;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="box">
+    <div class="spinner" id="gateSpinner"></div>
+    <h2 id="gateTitle">Loading battle log…</h2>
+    <p id="gateText">Pulling clash_royale_ladder.db from GitHub.</p>
+    <div id="gateForm" style="display:none;">
+      <input id="ghOwner" placeholder="GitHub username" />
+      <input id="ghRepo" placeholder="Repo name" />
+      <input id="ghBranch" placeholder="Branch (default: main)" />
+      <button onclick="saveGhConfigAndLoad()">Load dashboard</button>
+      <div class="err" id="gateErr"></div>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="mark"></div>
+      <div>
+        <h1 class="display">LADDER LOG</h1>
+        <div class="sub" id="playerTagLabel">—</div>
+      </div>
+    </div>
+    <div class="range-pills" id="rangePills">
+      <button data-range="7">7D</button>
+      <button data-range="30">30D</button>
+      <button data-range="90">90D</button>
+      <button data-range="all" class="active">ALL</button>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div>
+      <div class="hero-num" id="winRateNum">—%</div>
+      <div class="hero-label">win rate across <span id="heroGameCount">0</span> ladder games</div>
+      <div class="hero-record">
+        <div class="w">Wins<b id="statWins">0</b></div>
+        <div class="l">Losses<b id="statLosses">0</b></div>
+        <div class="d">Draws<b id="statDraws">0</b></div>
+      </div>
+      <div class="streak-badge"><span class="dot" id="streakDot"></span><span id="streakText">—</span></div>
+    </div>
+    <div id="ringWrap">
+      <canvas id="ringChart"></canvas>
+      <div class="ring-center"><div class="n" id="ringNum">—%</div><div class="l">of games won</div></div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <h2>Trophy trend</h2>
+      <div class="note" id="trophyNote">—</div>
+    </div>
+    <div class="chart-box"><canvas id="trophyChart" height="80"></canvas></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>At a glance</h2></div>
+    <div class="tiles">
+      <div class="tile wide"><div class="n" id="tileStreak">—</div><div class="l">best win streak</div></div>
+      <div class="tile"><div class="n" id="tileCrownDiff">—</div><div class="l">avg crown differential</div></div>
+      <div class="tile"><div class="n" id="tileElixir">—</div><div class="l">avg elixir leaked</div></div>
+      <div class="tile"><div class="n" id="tileTrophyNet">—</div><div class="l">net trophies this range</div></div>
+      <div class="tile"><div class="n" id="tileTowers">—</div><div class="l">avg king tower HP held</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Deck performance</h2>
+      <div class="note">min. 3 games played</div>
+    </div>
+    <div id="deckList"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Cards you face most</h2></div>
+    <div class="card-freq" id="cardFreq"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>When you play</h2>
+      <div class="note">games by hour of day</div>
+    </div>
+    <div id="heatmap"></div>
+    <div class="hm-legend"><span>fewer games</span>
+      <span class="hm-cell" style="background:rgba(168,85,247,.15)"></span>
+      <span class="hm-cell" style="background:rgba(168,85,247,.4)"></span>
+      <span class="hm-cell" style="background:rgba(168,85,247,.7)"></span>
+      <span class="hm-cell" style="background:rgba(168,85,247,1)"></span>
+      <span>more games</span>
+    </div>
+  </section>
+
+  <section style="border-bottom:none;">
+    <div class="sec-head"><h2>Recent battles</h2></div>
+    <div class="log" id="battleLog"></div>
+  </section>
+
+  <footer>Generated client-side from your ladder database — no server, no tracking.</footer>
+</div>
+</div>
+
+<script>
+/* ---------------- config ---------------- */
+const DEFAULT_OWNER = "YOUR_GITHUB_USERNAME";
+const DEFAULT_REPO = "CR-tracker2";
+const DEFAULT_BRANCH = "main";
+const DB_FILENAME = "clash_royale_ladder.db";
+
+function getGhConfig(){
+  const stored = localStorage.getItem("cr_gh_config");
+  if(stored) return JSON.parse(stored);
+  return { owner: DEFAULT_OWNER, repo: DEFAULT_REPO, branch: DEFAULT_BRANCH };
+}
+function dbUrl(cfg){
+  return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${DB_FILENAME}`;
+}
+
+let ALL_ROWS = [];
+let currentRange = "all";
+
+/* ---------------- boot ---------------- */
+async function boot(){
+  const cfg = getGhConfig();
+  if(!cfg.owner || cfg.owner === "YOUR_GITHUB_USERNAME"){
+    showSetupForm("Enter the GitHub repo that hosts your clash_royale_ladder.db.");
+    return;
+  }
+  await loadFromGithub(cfg);
+}
+
+function showSetupForm(msg){
+  document.getElementById('gateSpinner').style.display = 'none';
+  document.getElementById('gateTitle').textContent = "Point this at your data";
+  document.getElementById('gateText').textContent = msg;
+  document.getElementById('gateForm').style.display = 'block';
+}
+
+function saveGhConfigAndLoad(){
+  const owner = document.getElementById('ghOwner').value.trim();
+  const repo = document.getElementById('ghRepo').value.trim();
+  const branch = document.getElementById('ghBranch').value.trim() || 'main';
+  if(!owner || !repo){
+    document.getElementById('gateErr').textContent = "Owner and repo are required.";
+    return;
+  }
+  const cfg = { owner, repo, branch };
+  localStorage.setItem("cr_gh_config", JSON.stringify(cfg));
+  document.getElementById('gateForm').style.display = 'none';
+  document.getElementById('gateSpinner').style.display = 'block';
+  document.getElementById('gateTitle').textContent = "Loading battle log…";
+  document.getElementById('gateText').textContent = "";
+  loadFromGithub(cfg);
+}
+
+async function loadFromGithub(cfg){
+  try{
+    const [SQL, res] = await Promise.all([
+      initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}` }),
+      fetch(dbUrl(cfg) + `?t=${Date.now()}`)
+    ]);
+    if(!res.ok) throw new Error(`Couldn't fetch the database (HTTP ${res.status}). Check the repo/branch/filename.`);
+    const buf = await res.arrayBuffer();
+    const db = new SQL.Database(new Uint8Array(buf));
+
+    const result = db.exec("SELECT * FROM ladder_battles ORDER BY battleTime ASC");
+    if(!result.length){ throw new Error("Database has no ladder_battles rows yet."); }
+    const cols = result[0].columns;
+    ALL_ROWS = result[0].values.map(r => Object.fromEntries(cols.map((c,i) => [c, r[i]])));
+
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('playerTagLabel').textContent = ALL_ROWS[ALL_ROWS.length-1].player_tag || "";
+    setupRangePills();
+    render();
+  }catch(err){
+    document.getElementById('gateSpinner').style.display = 'none';
+    document.getElementById('gateTitle').textContent = "Couldn't load your data";
+    document.getElementById('gateText').textContent = err.message;
+    showSetupForm("Double-check the repo details, or wait for the first GitHub Action run to commit the .db file.");
+  }
+}
+
+function setupRangePills(){
+  document.querySelectorAll('#rangePills button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#rangePills button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRange = btn.dataset.range;
+      render();
+    });
+  });
+}
+
+function filteredRows(){
+  if(currentRange === 'all') return ALL_ROWS;
+  const days = parseInt(currentRange,10);
+  const cutoff = Date.now() - days*24*60*60*1000;
+  return ALL_ROWS.filter(r => parseBattleTime(r.battleTime).getTime() >= cutoff);
+}
+
+// battleTime looks like 20240613T182233.000Z
+function parseBattleTime(s){
+  if(!s) return new Date(0);
+  const m = s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/);
+  if(!m) return new Date(s);
+  return new Date(Date.UTC(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]));
+}
+
+/* ---------------- render ---------------- */
+let trophyChartInst, ringChartInst;
+
+function render(){
+  const rows = filteredRows();
+  if(!rows.length){
+    document.getElementById('heroGameCount').textContent = "0";
+    return;
+  }
+
+  const wins = rows.filter(r=>r.result==='Win').length;
+  const losses = rows.filter(r=>r.result==='Loss').length;
+  const draws = rows.filter(r=>r.result==='Draw').length;
+  const winRate = (wins/rows.length*100);
+
+  document.getElementById('winRateNum').textContent = winRate.toFixed(1)+'%';
+  document.getElementById('ringNum').textContent = winRate.toFixed(0)+'%';
+  document.getElementById('heroGameCount').textContent = rows.length;
+  document.getElementById('statWins').textContent = wins;
+  document.getElementById('statLosses').textContent = losses;
+  document.getElementById('statDraws').textContent = draws;
+
+  renderStreak(rows);
+  renderRing(winRate);
+  renderTrophyChart(rows);
+  renderTiles(rows);
+  renderDecks(rows);
+  renderCardFreq(rows);
+  renderHeatmap(rows);
+  renderLog(rows);
+}
+
+function renderStreak(rows){
+  // current streak: walk backwards from most recent
+  let streak = 0, type = null;
+  for(let i=rows.length-1;i>=0;i--){
+    const r = rows[i].result;
+    if(r==='Draw') break;
+    if(type===null){ type=r; streak=1; }
+    else if(r===type){ streak++; }
+    else break;
+  }
+  const dot = document.getElementById('streakDot');
+  const text = document.getElementById('streakText');
+  if(streak===0){ text.textContent = 'No active streak'; dot.style.background='var(--draw)'; }
+  else{
+    text.textContent = `${streak} ${type==='Win'?'win':'loss'}${streak>1?'s':''} in a row`;
+    dot.style.background = type==='Win' ? 'var(--win)' : 'var(--loss)';
+  }
+
+  // best win streak
+  let best=0, run=0;
+  rows.forEach(r=>{
+    if(r.result==='Win'){ run++; best=Math.max(best,run); } else run=0;
+  });
+  document.getElementById('tileStreak').textContent = best;
+}
+
+function renderRing(winRate){
+  const ctx = document.getElementById('ringChart');
+  if(ringChartInst) ringChartInst.destroy();
+  ringChartInst = new Chart(ctx, {
+    type:'doughnut',
+    data:{ datasets:[{ data:[winRate, 100-winRate], backgroundColor:['#34D399','#1C2247'], borderWidth:0 }] },
+    options:{ cutout:'78%', plugins:{ legend:{display:false}, tooltip:{enabled:false} }, animation:{ duration:600 } }
+  });
+}
+
+function renderTrophyChart(rows){
+  const labels = rows.map(r=>parseBattleTime(r.battleTime));
+  const data = rows.map(r=>r.currentTrophies);
+  const ctx = document.getElementById('trophyChart');
+  if(trophyChartInst) trophyChartInst.destroy();
+  trophyChartInst = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{
+      data, borderColor:'#F5B942', borderWidth:2, pointRadius:0, tension:.3,
+      fill:true, backgroundColor:(c)=>{
+        const g = c.chart.ctx.createLinearGradient(0,0,0,220);
+        g.addColorStop(0,'rgba(245,185,66,0.25)'); g.addColorStop(1,'rgba(245,185,66,0)');
+        return g;
+      }
+    }]},
+    options:{
+      responsive:true,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ title:(items)=> items[0].label } } },
+      scales:{
+        x:{ type:'time', time:{ unit: rows.length>200?'week':'day' }, grid:{ color:'#1C2247' }, ticks:{ color:'#8A8FBF', maxTicksLimit:8 } },
+        y:{ grid:{ color:'#1C2247' }, ticks:{ color:'#8A8FBF' } }
+      }
+    }
+  });
+  const net = data[data.length-1] - data[0];
+  document.getElementById('trophyNote').textContent = `${net>=0?'+':''}${net} trophies over this range`;
+}
+
+function renderTiles(rows){
+  const crownDiff = avg(rows.map(r=>(r.crowns||0)-(r.opponent_crowns||0)));
+  const elixir = avg(rows.map(r=>r.elixirLeaked).filter(v=>v!=null));
+  const netTrophy = rows.reduce((s,r)=>s+(r.trophyChange||0),0);
+  const kingHp = avg(rows.map(r=>r.kingTowerHP).filter(v=>v!=null));
+
+  document.getElementById('tileCrownDiff').textContent = (crownDiff>=0?'+':'')+crownDiff.toFixed(1);
+  document.getElementById('tileElixir').textContent = elixir.toFixed(1);
+  document.getElementById('tileTrophyNet').textContent = (netTrophy>=0?'+':'')+netTrophy;
+  document.getElementById('tileTowers').textContent = Math.round(kingHp);
+}
+
+function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+
+function renderDecks(rows){
+  const groups = {};
+  rows.forEach(r=>{
+    const key = r.deck || 'Unknown';
+    if(!groups[key]) groups[key] = { games:0, wins:0 };
+    groups[key].games++;
+    if(r.result==='Win') groups[key].wins++;
+  });
+  const decks = Object.entries(groups)
+    .filter(([,v])=>v.games>=3)
+    .map(([deck,v])=>({ deck, ...v, wr: v.wins/v.games*100 }))
+    .sort((a,b)=>b.wr-a.wr)
+    .slice(0,8);
+
+  const el = document.getElementById('deckList');
+  if(!decks.length){ el.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">Not enough repeated decks yet in this range.</p>'; return; }
+  el.innerHTML = decks.map(d => `
+    <div class="deck-row">
+      <div class="deck-cards">${d.deck.split(' | ').join(' · ')}</div>
+      <div class="deck-games">${d.games} games</div>
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <div class="bar-wrap"><div class="bar-fill" style="width:${d.wr}%"></div></div>
+        <div class="deck-wr">${d.wr.toFixed(0)}%</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCardFreq(rows){
+  const counts = {};
+  rows.forEach(r=>{
+    (r.opponent_deck||'').split(' | ').filter(Boolean).forEach(card=>{
+      counts[card] = (counts[card]||0) + 1;
+    });
+  });
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const max = top.length ? top[0][1] : 1;
+  document.getElementById('cardFreq').innerHTML = top.map(([card,n])=>`
+    <div class="cf-row">
+      <div>
+        <div>${card}</div>
+        <div class="cf-bar"><div class="cf-fill" style="width:${n/max*100}%"></div></div>
+      </div>
+      <div class="cf-n">${n}×</div>
+    </div>
+  `).join('');
+}
+
+function renderHeatmap(rows){
+  const buckets = new Array(24).fill(0);
+  rows.forEach(r=>{ buckets[parseBattleTime(r.battleTime).getUTCHours()]++; });
+  const max = Math.max(...buckets,1);
+  document.getElementById('heatmap').innerHTML = buckets.map((n,h)=>{
+    const alpha = n===0 ? 0.08 : 0.15 + (n/max)*0.85;
+    return `<div class="hm-cell" title="${String(h).padStart(2,'0')}:00 UTC — ${n} games" style="background:rgba(168,85,247,${alpha})"></div>`;
+  }).join('');
+}
+
+function renderLog(rows){
+  const recent = rows.slice(-40).reverse();
+  document.getElementById('battleLog').innerHTML = recent.map(r=>{
+    const color = r.result==='Win' ? 'var(--win)' : r.result==='Loss' ? 'var(--loss)' : 'var(--draw)';
+    const tcClass = r.trophyChange>0?'pos':r.trophyChange<0?'neg':'zero';
+    const d = parseBattleTime(r.battleTime);
+    const dateStr = d.toLocaleDateString(undefined,{ month:'short', day:'numeric' });
+    return `
+      <div class="log-row">
+        <div class="res-dot" style="background:${color}"></div>
+        <div class="log-opp">${r.opponent_name || 'Unknown'} <span class="tag">${dateStr}</span></div>
+        <div class="log-crowns">${r.crowns}–${r.opponent_crowns}</div>
+        <div class="log-trophy ${tcClass}">${r.trophyChange>0?'+':''}${r.trophyChange}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+boot();
+</script>
+</body>
+</html>

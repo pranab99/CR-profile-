@@ -1,0 +1,37 @@
+name: Update Clash Royale ladder DB
+
+on:
+  schedule:
+    # Every 30 minutes. GitHub may delay this slightly under load.
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run logger
+        env:
+          CR_PLAYER_TAG: ${{ secrets.CR_PLAYER_TAG }}
+          CR_BEARER_TOKEN: ${{ secrets.CR_BEARER_TOKEN }}
+        run: python clash_logger.py
+
+      - name: Commit updated database
+        run: |
+          git config user.name "cr-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add clash_royale_ladder.db
+          git diff --staged --quiet || git commit -m "Update ladder battle log [skip ci]"
+          git push
