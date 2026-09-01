@@ -1,0 +1,52 @@
+# Name of your workflow
+name: Fetch Clash Royale Data 2
+
+# Controls when the action will run
+on:
+  # Runs on a schedule (every hour at 0 minutes past the hour)
+  schedule:
+    - cron: '0 * * * *'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: write
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # 1. Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Sets up a Python environment
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # 3. Installs the libraries from your requirements.txt file
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 4. Runs your Python script
+      - name: Run the data fetch script
+        env:
+          CR_PLAYER_TAG: ${{ secrets.CR_PLAYER_TAG }}
+          CR_BEARER_TOKEN: ${{ secrets.CR_BEARER_TOKEN }}
+        run: python clash_logger.py
+
+      # 5. Commits and pushes the updated database file back to the repository
+      - name: Commit and push database
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add clash_royale_ladder.db
+          # This version uses slashes in the date format
+          git diff --staged --quiet || git commit -m "Last updated at $(TZ='Asia/Kolkata' date +'%d/%m/%y, %I:%M %p') IST"
+          git push
