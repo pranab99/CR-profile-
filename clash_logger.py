@@ -22,10 +22,10 @@ from datetime import datetime
 
 import requests
 
-PLAYER_TAG_RAW = os.getenv("CR_PLAYER_TAG", "")
+PLAYER_TAG_RAW = "#8LCULCYUP"
 BEARER_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6ImYxMDU5MmI1LWRmM2EtNDFhYi05ZTk4LTYyZjkxZWYwNTQ1YSIsImlhdCI6MTc4ODI4MzExOCwic3ViIjoiZGV2ZWxvcGVyL2VhOGYwYjY3LTExYWMtNDRmMi1iN2VmLTBlY2U3ZjA2M2RkYyIsInNjb3BlcyI6WyJyb3lhbGUiXSwibGltaXRzIjpbeyJ0aWVyIjoiZGV2ZWxvcGVyL3NpbHZlciIsInR5cGUiOiJ0aHJvdHRsaW5nIn0seyJjaWRycyI6WyIwLjAuMC4wIl0sInR5cGUiOiJjbGllbnQifV19.pHs4ZusffwM_4TQBSKSqhR1_1YsLhYEV7mVOeF-1TimEX-4TvDspRKRZezsb4eUrwVywX3INjSd3A2VuMkaZDg" 
 
-this is my JWT for clash royale")
+#this is my JWT for clash royale")
 PLAYER_TAG_URL = PLAYER_TAG_RAW.replace("#", "%23")
 DB_PATH = "clash_royale_ladder.db"
 
