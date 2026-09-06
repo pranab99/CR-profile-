@@ -30,12 +30,42 @@ API_BASE_URL = os.environ.get("CR_API_BASE_URL", "https://proxy.royaleapi.dev/v1
 DB_PATH = "clash_royale_ladder.db"
 
 PLAYER_TAG_URL = PLAYER_TAG_RAW.replace('#', '%23')
+TARGET_PLAYER_TAG = os.environ.get("TARGET_PLAYER_TAG", "#YJPUJ9PU").strip()
+TARGET_PLAYER_ALIAS = os.environ.get("TARGET_PLAYER_ALIAS", "King007").strip()
 
 print(f"[DEBUG] PLAYER_TAG_RAW = {PLAYER_TAG_RAW!r}")
 print(f"[DEBUG] PLAYER_TAG_URL (encoded) = {PLAYER_TAG_URL!r}")
+print(f"[DEBUG] TARGET_PLAYER_TAG = {TARGET_PLAYER_TAG!r}")
+print(f"[DEBUG] TARGET_PLAYER_ALIAS = {TARGET_PLAYER_ALIAS!r}")
 print(f"[DEBUG] BEARER_TOKEN set = {bool(BEARER_TOKEN)} (len={len(BEARER_TOKEN)})")
 print(f"[DEBUG] API_BASE_URL = {API_BASE_URL!r}")
 print(f"[DEBUG] DB_PATH = {DB_PATH!r}")
+
+
+def normalize_tag(tag):
+    if not tag:
+        return ""
+    return tag.lstrip("#").upper()
+
+
+def is_target_player(player_data):
+    if not player_data:
+        return False
+    tag = normalize_tag(player_data.get("tag", ""))
+    target_tag = normalize_tag(TARGET_PLAYER_TAG)
+    name = (player_data.get("name") or "").strip().lower()
+    target_name = TARGET_PLAYER_ALIAS.strip().lower()
+    return (bool(target_tag) and tag == target_tag) or (bool(target_name) and name == target_name)
+
+
+def is_target_battle(battle):
+    for opp in battle.get("opponent", []):
+        if is_target_player(opp):
+            return True
+    for tm in battle.get("team", []):
+        if is_target_player(tm):
+            return True
+    return False
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS ladder_battles (
@@ -132,50 +162,98 @@ def fetch_and_process_battles():
     processed = []
     for i, battle in enumerate(battles):
         mode = battle.get("gameMode", {}).get("name", "")
-        print(f"[DEBUG] Battle {i}: battleTime={battle.get('battleTime')}, gameMode={mode}")
-        # Ladder + the modern ranked ladder mode name Supercell uses now
-        if mode not in ("Ladder", "Ladder_CrownRush", "Ranked1v1"):
-            print(f"[DEBUG] Battle {i}: skipped (mode '{mode}' not a tracked ladder mode)")
+        if not mode:
+            mode = battle.get("type", "Unknown")
+
+        is_ladder = mode in ("Ladder", "Ladder_CrownRush", "Ranked1v1")
+        is_target = is_target_battle(battle)
+        print(f"[DEBUG] Battle {i}: battleTime={battle.get('battleTime')}, gameMode={mode}, is_ladder={is_ladder}, is_target={is_target}")
+
+        # Collect ladder / trophy road battles, and ANY battle played with King007 irrespective of battle type
+        if not (is_ladder or is_target):
+            print(f"[DEBUG] Battle {i}: skipped (mode '{mode}' not ladder and rival {TARGET_PLAYER_ALIAS} not involved)")
             continue
 
-        player = battle["team"][0]
-        opponent = battle["opponent"][0] if battle.get("opponent") else {}
-        print(f"[DEBUG] Battle {i}: player={player.get('name')}, opponent={opponent.get('name')}")
+        player = battle["team"][0] if battle.get("team") else {}
 
-        trophy_change = player.get("trophyChange", 0)
-        if trophy_change > 0:
+        # Prioritize target rival if present in opponent list (e.g. 1v1 or 2v2)
+        opponents = battle.get("opponent", [])
+        opponent = {}
+        for opp in opponents:
+            if is_target_player(opp):
+                opponent = opp
+                break
+        if not opponent and opponents:
+            opponent = opponents[0]
+        elif not opponent:
+            # Check team list for target rival (e.g. 2v2 partner/rival)
+            for tm in battle.get("team", []):
+                if is_target_player(tm):
+                    opponent = tm
+                    break
+
+        print(f"[DEBUG] Battle {i}: player={player.get('name')}, opponent={opponent.get('name')} ({opponent.get('tag')})")
+
+        trophy_change = player.get("trophyChange") if is_ladder else 0
+        player_crowns = player.get("crowns", 0)
+        opp_crowns = opponent.get("crowns", 0)
+
+        # In non-ladder (friendly/party/challenge), trophyChange is absent or 0.
+        # Fall back to crowns and tower HP for accurate Win/Loss determination.
+        if trophy_change is not None and trophy_change > 0:
             result = "Win"
-        elif trophy_change < 0:
+        elif trophy_change is not None and trophy_change < 0:
+            result = "Loss"
+        elif player_crowns > opp_crowns:
+            result = "Win"
+        elif player_crowns < opp_crowns:
             result = "Loss"
         else:
-            result = "Draw"
-        print(f"[DEBUG] Battle {i}: trophyChange={trophy_change}, result={result}")
+            player_king = player.get("kingTowerHP") if "kingTowerHP" in player else player.get("kingTowerHitPoints") or 0
+            opp_king = opponent.get("kingTowerHP") if "kingTowerHP" in opponent else opponent.get("kingTowerHitPoints") or 0
+            if player_king > opp_king:
+                result = "Win"
+            elif player_king < opp_king:
+                result = "Loss"
+            else:
+                result = "Draw"
+        print(f"[DEBUG] Battle {i}: trophyChange={trophy_change}, player_crowns={player_crowns}, opp_crowns={opp_crowns}, result={result}")
 
-        current_trophies = player.get("startingTrophies", 0) + trophy_change
-        print(f"[DEBUG] Battle {i}: startingTrophies={player.get('startingTrophies', 0)}, currentTrophies={current_trophies}")
+        # Set current_trophies to None for non-ladder matches to prevent distorting trophy charts
+        if is_ladder:
+            starting_trophies = player.get("startingTrophies")
+            if starting_trophies is not None and trophy_change is not None:
+                current_trophies = starting_trophies + trophy_change
+            elif starting_trophies is not None:
+                current_trophies = starting_trophies
+            else:
+                current_trophies = None
+        else:
+            current_trophies = None
+        print(f"[DEBUG] Battle {i}: is_ladder={is_ladder}, startingTrophies={player.get('startingTrophies')}, currentTrophies={current_trophies}")
 
         row = (
             battle.get("battleTime"),
             mode,
             result,
-            trophy_change,
+            trophy_change if trophy_change is not None else 0,
             current_trophies,
             format_deck(player.get("cards")),
             player.get("crowns", 0),
             player.get("elixirLeaked"),
-            player.get("kingTowerHitPoints"),
+            player.get("kingTowerHP") if "kingTowerHP" in player else player.get("kingTowerHitPoints"),
             json.dumps(player.get("princessTowersHitPoints", [])),
             opponent.get("tag"),
             opponent.get("name"),
             format_deck(opponent.get("cards")),
             opponent.get("crowns", 0),
-            opponent.get("kingTowerHitPoints"),
+            opponent.get("kingTowerHP") if "kingTowerHP" in opponent else opponent.get("kingTowerHitPoints"),
             json.dumps(opponent.get("princessTowersHitPoints", [])),
         )
         print(f"[DEBUG] Battle {i}: row built = {row}")
         processed.append(row)
 
-    print(f"Found {len(processed)} ladder battles in this fetch.")
+    print(f"Found {len(processed)} battles matching criteria in this fetch.")
     return processed
 
 

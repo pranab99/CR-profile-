@@ -72,20 +72,35 @@ redeploy for new battle data to show up.
 
 | File | Purpose |
 |---|---|
-| `clash_logger.py` | Fetches your last ~25 ladder battles from the CR API, appends new ones to `clash_royale_ladder.db` (dedupes on player+battleTime) |
+| `clash_logger.py` | Fetches your last ~25 battles from the CR API, collecting all Trophy Road / Ladder battles plus any battles with rival **King007** (`#YJPUJ9PU`) across all modes (Friendly, Ladder, 2v2), appending new ones to `clash_royale_ladder.db` (dedupes on player+battleTime) |
 | `.github/workflows/static.yml` | Runs the logger every 30 min and commits the updated DB |
-| `index.html` | The dashboard — loads the DB with sql.js (SQLite compiled to WASM) directly in the browser |
+| `index.html` | The dashboard — loads the DB with sql.js (SQLite compiled to WASM) directly in the browser, featuring ladder analytics and a dedicated King007 Head-to-Head section |
 | `vercel.json` | Tells Vercel this is a static site, no build step |
 
 ## Calculations the dashboard shows
 
+### Ladder / Trophy Road Dashboard
 - Win rate, W/L/D record, current and best win streak (range-filterable: 7D/30D/90D/all)
 - Trophy trend over time
-- Average crown differential, average elixir leaked, net trophy change, average king tower HP held
-- Deck win rate (grouped by exact 8-card deck, min. 3 games)
-- Most-faced opponent cards
+- Performance index (Form score, consistency, tilt risk, best play hours)
+- Average crown differential, average elixir leaked, net trophy change, average king tower HP held, close-game win rate
+- Deck win rate and matchup radar
 - Games-by-hour-of-day heatmap
-- Scrollable recent battle log
+- Scrollable recent battle log filtered to Ladder / Trophy Road matches
+
+### Head-to-Head Rivalry: King007 (`#YJPUJ9PU`)
+- All-time and range-filtered head-to-head match analytics
+- Win rate %, W/L/D record, and active win/loss streak against King007
+- Total crowns scored vs crowns conceded & average crown differential
+- Most played battle type breakdown (Friendly, Ladder, 2v2, etc.)
+- Deck matchup breakdown: your most used decks vs King007's most used decks
+- Full match history with mode badges, date, crown scores, and deck card lists
+
+## Rival Target Configuration
+
+By default, the logger and dashboard track `#YJPUJ9PU` alias `King007`. You can optionally customize this via GitHub Action secrets / environment variables in `clash_logger.py`:
+- `TARGET_PLAYER_TAG` (default: `#YJPUJ9PU`)
+- `TARGET_PLAYER_ALIAS` (default: `King007`)
 
 ## Notes
 
