@@ -11,26 +11,25 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 <style>
   :root{
-    --bg:#0A0D1E;
-    --bg-2:#0E1230;
-    --surface:#151A38;
-    --surface-hi:#1C2247;
-    --line:#262C54;
-    --text:#EDEFF7;
-    --muted:#8A8FBF;
-    --gold:#F5B942;
-    --elixir:#A855F7;
-    --win:#34D399;
-    --loss:#FB7185;
-    --draw:#8A8FBF;
+    --bg:#0b0d10;
+    --surface:#12161b;
+    --surface-2:#171d23;
+    --surface-3:#1d252d;
+    --line:#2a333d;
+    --text:#edf2f7;
+    --muted:#8f9ba8;
+    --gold:#f3ba4d;
+    --blue:#5aa7ff;
+    --teal:#38d6b0;
+    --win:#36d399;
+    --loss:#ff6b7a;
+    --draw:#9aa4b2;
+    --warn:#ffcf5a;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:
-      radial-gradient(1200px 600px at 15% -10%, rgba(168,85,247,0.16), transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, rgba(245,185,66,0.10), transparent 55%),
-      var(--bg);
+    background:var(--bg);
     color:var(--text);
     font-family:'General Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing:antialiased;
@@ -40,74 +39,92 @@
   a{color:inherit;}
 
   /* ---------- shell ---------- */
-  .wrap{max-width:1080px;margin:0 auto;padding:2rem 1.25rem 5rem;}
-  header.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:2.5rem;flex-wrap:wrap;}
+  .wrap{max-width:1220px;margin:0 auto;padding:1.5rem 1.1rem 4rem;}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;}
   .brand{display:flex;align-items:baseline;gap:.6rem;}
-  .brand .mark{width:10px;height:10px;border-radius:2px;background:linear-gradient(135deg,var(--gold),var(--elixir));transform:rotate(45deg);}
+  .brand .mark{width:10px;height:10px;border-radius:2px;background:linear-gradient(135deg,var(--gold),var(--teal));transform:rotate(45deg);}
   .brand h1{font-size:1.05rem;letter-spacing:.02em;margin:0;font-weight:600;}
   .brand .sub{color:var(--muted);font-size:.85rem;}
 
-  .range-pills{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;}
+  .range-pills{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px;gap:2px;}
   .range-pills button{
     border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:.82rem;
-    padding:.4rem .85rem;border-radius:999px;cursor:pointer;transition:background .2s,color .2s;
+    padding:.45rem .85rem;border-radius:6px;cursor:pointer;transition:background .2s,color .2s;
   }
-  .range-pills button.active{background:var(--surface-hi);color:var(--text);}
+  .range-pills button.active{background:var(--surface-3);color:var(--text);}
 
   /* ---------- hero ---------- */
-  .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:2.5rem;align-items:center;padding:2.25rem 0 2.75rem;border-bottom:1px solid var(--line);}
-  @media(max-width:760px){.hero{grid-template-columns:1fr;gap:1.75rem;}}
-  .hero-num{font-family:'Clash Display',sans-serif;font-weight:700;font-size:clamp(4rem,11vw,6.5rem);line-height:.92;letter-spacing:-.02em;
-    background:linear-gradient(135deg,#fff 20%,var(--gold) 75%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:1rem;align-items:stretch;margin-bottom:1rem;}
+  @media(max-width:860px){.hero{grid-template-columns:1fr;}}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:1.2rem;}
+  .hero-main{display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;}
+  @media(max-width:620px){.hero-main{grid-template-columns:1fr;}}
+  .hero-num{font-family:'Clash Display',sans-serif;font-weight:700;font-size:clamp(3.2rem,9vw,6.2rem);line-height:.92;letter-spacing:0;
+    background:linear-gradient(135deg,#fff 10%,var(--gold) 85%);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .hero-label{color:var(--muted);font-size:.95rem;margin-top:.5rem;}
-  .hero-record{display:flex;gap:1.25rem;margin-top:1.25rem;font-size:.9rem;}
-  .hero-record b{font-size:1.15rem;display:block;font-family:'Clash Display',sans-serif;}
+  .hero-record{display:grid;grid-template-columns:repeat(3,minmax(72px,1fr));gap:.55rem;margin-top:1rem;font-size:.82rem;max-width:360px;}
+  .hero-record div{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:.6rem .7rem;}
+  .hero-record b{font-size:1.1rem;display:block;font-family:'Clash Display',sans-serif;margin-top:.15rem;}
   .hero-record .w b{color:var(--win);} .hero-record .l b{color:var(--loss);} .hero-record .d b{color:var(--draw);}
-  .streak-badge{display:inline-flex;align-items:center;gap:.5rem;margin-top:1.25rem;padding:.45rem .8rem;border:1px solid var(--line);border-radius:999px;font-size:.82rem;color:var(--muted);}
+  .streak-badge{display:inline-flex;align-items:center;gap:.5rem;margin-top:1rem;padding:.45rem .7rem;border:1px solid var(--line);border-radius:6px;font-size:.82rem;color:var(--muted);}
   .streak-badge .dot{width:7px;height:7px;border-radius:50%;}
-  #ringWrap{position:relative;display:flex;align-items:center;justify-content:center;}
-  #ringChart{max-width:230px;}
+  #ringWrap{position:relative;display:flex;align-items:center;justify-content:center;min-width:210px;}
+  #ringChart{width:220px;height:220px;max-width:100%;}
   .ring-center{position:absolute;text-align:center;pointer-events:none;}
   .ring-center .n{font-family:'Clash Display',sans-serif;font-weight:700;font-size:1.5rem;}
-  .ring-center .l{color:var(--muted);font-size:.72rem;margin-top:.15rem;}
+  .ring-center .l{color:var(--muted);font-size:.62rem;margin:.15rem auto 0;max-width:70px;line-height:1.2;}
+  .insight-list{display:grid;gap:.65rem;}
+  .insight{display:grid;grid-template-columns:auto 1fr auto;gap:.7rem;align-items:center;border-bottom:1px solid var(--line);padding-bottom:.65rem;}
+  .insight:last-child{border-bottom:none;padding-bottom:0;}
+  .insight .k{color:var(--muted);font-size:.76rem;}
+  .insight .v{font-family:'Clash Display',sans-serif;font-weight:700;font-size:1.1rem;}
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--blue);}
+  .grade{font-family:'Clash Display',sans-serif;font-size:1.8rem;font-weight:700;color:var(--gold);}
 
   /* ---------- trophy trend ---------- */
-  section{padding:2.5rem 0;border-bottom:1px solid var(--line);}
-  .sec-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1.25rem;gap:1rem;flex-wrap:wrap;}
+  section{padding:1rem 0;}
+  .sec-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.75rem;gap:1rem;flex-wrap:wrap;}
   .sec-head h2{font-family:'Clash Display',sans-serif;font-size:1.15rem;font-weight:600;margin:0;}
   .sec-head .note{color:var(--muted);font-size:.82rem;}
-  .chart-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.25rem 1.25rem .5rem;}
+  .chart-box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:1rem 1rem .35rem;}
+  .chart-box canvas{width:100%;height:120px;}
+  .grid-2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:1rem;}
+  @media(max-width:900px){.grid-2{grid-template-columns:1fr;}}
 
   /* ---------- stat tiles (asymmetric) ---------- */
-  .tiles{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
-  @media(max-width:700px){.tiles{grid-template-columns:1fr 1fr;}}
+  .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  @media(max-width:900px){.tiles{grid-template-columns:repeat(2,1fr);}}
   .tile{background:var(--surface);padding:1.4rem 1.5rem;}
   .tile .n{font-family:'Clash Display',sans-serif;font-weight:700;font-size:2rem;}
   .tile .l{color:var(--muted);font-size:.8rem;margin-top:.35rem;}
-  .tile.wide{grid-row:span 2;display:flex;flex-direction:column;justify-content:center;}
-  .tile.wide .n{font-size:2.4rem;}
+  .tile .s{color:var(--muted);font-size:.72rem;margin-top:.25rem;}
 
   /* ---------- decks ---------- */
-  .deck-row{display:grid;grid-template-columns:1fr auto 90px;align-items:center;gap:1rem;padding:.85rem 0;border-bottom:1px solid var(--line);}
+  .deck-row{display:grid;grid-template-columns:1fr auto 120px;align-items:center;gap:1rem;padding:.85rem 0;border-bottom:1px solid var(--line);}
+  @media(max-width:640px){.deck-row{grid-template-columns:1fr;gap:.45rem;}}
   .deck-row:last-child{border-bottom:none;}
   .deck-cards{font-size:.78rem;color:var(--muted);line-height:1.5;}
   .deck-games{font-size:.78rem;color:var(--muted);white-space:nowrap;}
-  .bar-wrap{width:90px;height:8px;background:var(--surface-hi);border-radius:99px;overflow:hidden;}
-  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--elixir),var(--gold));}
+  .bar-wrap{width:100%;height:8px;background:var(--surface-3);border-radius:99px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--gold));}
   .deck-wr{font-family:'Clash Display',sans-serif;font-weight:700;font-size:.95rem;text-align:right;}
+  .deck-score{color:var(--blue);font-size:.75rem;margin-top:.25rem;}
 
   /* ---------- cards faced ---------- */
   .card-freq{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem 1.5rem;}
   @media(max-width:600px){.card-freq{grid-template-columns:1fr;}}
   .cf-row{display:grid;grid-template-columns:1fr 40px;align-items:center;gap:.6rem;font-size:.85rem;}
-  .cf-bar{height:6px;background:var(--surface-hi);border-radius:99px;overflow:hidden;margin-top:.3rem;}
-  .cf-fill{height:100%;background:var(--elixir);border-radius:99px;}
+  .cf-bar{height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:.3rem;}
+  .cf-fill{height:100%;background:var(--blue);border-radius:99px;}
   .cf-n{color:var(--muted);text-align:right;font-size:.78rem;}
+  .danger .cf-fill{background:var(--loss);}
 
   /* ---------- heatmap ---------- */
   #heatmap{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;}
-  .hm-cell{aspect-ratio:1;border-radius:3px;background:var(--surface-hi);}
+  .hm-cell{aspect-ratio:1;border-radius:3px;background:var(--surface-3);}
   .hm-legend{display:flex;align-items:center;gap:.4rem;color:var(--muted);font-size:.75rem;margin-top:.75rem;}
+  .hour-row{display:grid;grid-template-columns:42px 1fr 48px;gap:.7rem;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--line);font-size:.82rem;}
+  .hour-row:last-child{border-bottom:none;}
 
   /* ---------- battle log ---------- */
   .log{max-height:420px;overflow-y:auto;}
@@ -118,6 +135,7 @@
   .log-crowns{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
   .log-trophy{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;}
   .log-trophy.pos{color:var(--win);} .log-trophy.neg{color:var(--loss);} .log-trophy.zero{color:var(--draw);}
+  .empty{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:1.25rem;color:var(--muted);font-size:.9rem;line-height:1.6;}
 
   footer{color:var(--muted);font-size:.78rem;text-align:center;padding-top:2.5rem;}
 
@@ -126,9 +144,6 @@
   #gate .box{max-width:420px;}
   #gate h2{font-family:'Clash Display',sans-serif;}
   #gate p{color:var(--muted);font-size:.9rem;line-height:1.6;}
-  #gate input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.65rem .8rem;color:var(--text);font-family:inherit;margin-top:.6rem;}
-  #gate button{margin-top:1rem;background:linear-gradient(135deg,var(--elixir),var(--gold));border:none;color:#0A0D1E;font-weight:600;padding:.65rem 1.4rem;border-radius:999px;cursor:pointer;font-family:inherit;}
-  #gate .err{color:var(--loss);font-size:.82rem;margin-top:.8rem;}
   .spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:spin .8s linear infinite;margin:0 auto 1rem;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
@@ -142,13 +157,6 @@
     <div class="spinner" id="gateSpinner"></div>
     <h2 id="gateTitle">Loading battle log…</h2>
     <p id="gateText">Pulling clash_royale_ladder.db from GitHub.</p>
-    <div id="gateForm" style="display:none;">
-      <input id="ghOwner" placeholder="GitHub username" />
-      <input id="ghRepo" placeholder="Repo name" />
-      <input id="ghBranch" placeholder="Branch (default: main)" />
-      <button onclick="saveGhConfigAndLoad()">Load dashboard</button>
-      <div class="err" id="gateErr"></div>
-    </div>
   </div>
 </div>
 
@@ -172,52 +180,77 @@
   </header>
 
   <div class="hero">
+    <div class="panel hero-main">
     <div>
-      <div class="hero-num" id="winRateNum">—%</div>
+      <div class="hero-num" id="winRateNum">-%</div>
       <div class="hero-label">win rate across <span id="heroGameCount">0</span> ladder games</div>
       <div class="hero-record">
         <div class="w">Wins<b id="statWins">0</b></div>
         <div class="l">Losses<b id="statLosses">0</b></div>
         <div class="d">Draws<b id="statDraws">0</b></div>
       </div>
-      <div class="streak-badge"><span class="dot" id="streakDot"></span><span id="streakText">—</span></div>
+      <div class="streak-badge"><span class="dot" id="streakDot"></span><span id="streakText">-</span></div>
     </div>
     <div id="ringWrap">
       <canvas id="ringChart"></canvas>
-      <div class="ring-center"><div class="n" id="ringNum">—%</div><div class="l">of games won</div></div>
+      <div class="ring-center"><div class="n" id="ringNum">-%</div><div class="l">of games won</div></div>
+    </div>
+    </div>
+    <div class="panel">
+      <div class="sec-head"><h2>Performance Index</h2><div class="grade" id="grade">-</div></div>
+      <div class="insight-list">
+        <div class="insight"><span class="pulse"></span><div><div class="k">Form score</div><div class="v" id="insightForm">-</div></div><div class="k" id="insightFormMeta">last 10</div></div>
+        <div class="insight"><span class="pulse" style="background:var(--teal)"></span><div><div class="k">Consistency</div><div class="v" id="insightConsistency">-</div></div><div class="k" id="insightConsistencyMeta">low tilt</div></div>
+        <div class="insight"><span class="pulse" style="background:var(--gold)"></span><div><div class="k">Best window</div><div class="v" id="insightWindow">-</div></div><div class="k" id="insightWindowMeta">local</div></div>
+        <div class="insight"><span class="pulse" style="background:var(--loss)"></span><div><div class="k">Pressure card</div><div class="v" id="insightDanger">-</div></div><div class="k" id="insightDangerMeta">loss rate</div></div>
+      </div>
     </div>
   </div>
 
-  <section>
+  <section class="grid-2">
+    <div>
     <div class="sec-head">
       <h2>Trophy trend</h2>
-      <div class="note" id="trophyNote">—</div>
+      <div class="note" id="trophyNote">-</div>
     </div>
     <div class="chart-box"><canvas id="trophyChart" height="80"></canvas></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <h2>Best play hours</h2>
+        <div class="note">win rate by local hour</div>
+      </div>
+      <div class="panel" id="hourList"></div>
+    </div>
   </section>
 
   <section>
     <div class="sec-head"><h2>At a glance</h2></div>
     <div class="tiles">
-      <div class="tile wide"><div class="n" id="tileStreak">—</div><div class="l">best win streak</div></div>
-      <div class="tile"><div class="n" id="tileCrownDiff">—</div><div class="l">avg crown differential</div></div>
-      <div class="tile"><div class="n" id="tileElixir">—</div><div class="l">avg elixir leaked</div></div>
-      <div class="tile"><div class="n" id="tileTrophyNet">—</div><div class="l">net trophies this range</div></div>
-      <div class="tile"><div class="n" id="tileTowers">—</div><div class="l">avg king tower HP held</div></div>
+      <div class="tile"><div class="n" id="tileStreak">-</div><div class="l">best win streak</div><div class="s" id="tileCurrentStreak">-</div></div>
+      <div class="tile"><div class="n" id="tileTrophyNet">-</div><div class="l">net trophies</div><div class="s" id="tileVelocity">-</div></div>
+      <div class="tile"><div class="n" id="tileCrownDiff">-</div><div class="l">avg crown diff</div><div class="s" id="tileCrowns">-</div></div>
+      <div class="tile"><div class="n" id="tileElixir">-</div><div class="l">avg elixir leaked</div><div class="s" id="tileElixirRank">-</div></div>
+      <div class="tile"><div class="n" id="tileTowers">-</div><div class="l">avg king HP held</div><div class="s">survival quality</div></div>
+      <div class="tile"><div class="n" id="tileCloseRate">-</div><div class="l">close-game win rate</div><div class="s">1 crown margin</div></div>
+      <div class="tile"><div class="n" id="tileTilt">-</div><div class="l">tilt risk</div><div class="s" id="tileTiltMeta">loss clusters</div></div>
+      <div class="tile"><div class="n" id="tilePeak">-</div><div class="l">peak trophies</div><div class="s" id="tilePeakMeta">in range</div></div>
     </div>
   </section>
 
-  <section>
+  <section class="grid-2">
+    <div class="panel">
     <div class="sec-head">
       <h2>Deck performance</h2>
-      <div class="note">min. 3 games played</div>
+      <div class="note">score blends wins, trophies, sample size</div>
     </div>
     <div id="deckList"></div>
-  </section>
+    </div>
 
-  <section>
-    <div class="sec-head"><h2>Cards you face most</h2></div>
-    <div class="card-freq" id="cardFreq"></div>
+    <div class="panel">
+      <div class="sec-head"><h2>Matchup radar</h2><div class="note">danger and frequency</div></div>
+      <div class="card-freq" id="cardFreq"></div>
+    </div>
   </section>
 
   <section>
@@ -227,10 +260,10 @@
     </div>
     <div id="heatmap"></div>
     <div class="hm-legend"><span>fewer games</span>
-      <span class="hm-cell" style="background:rgba(168,85,247,.15)"></span>
-      <span class="hm-cell" style="background:rgba(168,85,247,.4)"></span>
-      <span class="hm-cell" style="background:rgba(168,85,247,.7)"></span>
-      <span class="hm-cell" style="background:rgba(168,85,247,1)"></span>
+      <span class="hm-cell" style="background:rgba(56,214,176,.15)"></span>
+      <span class="hm-cell" style="background:rgba(56,214,176,.4)"></span>
+      <span class="hm-cell" style="background:rgba(56,214,176,.7)"></span>
+      <span class="hm-cell" style="background:rgba(56,214,176,1)"></span>
       <span>more games</span>
     </div>
   </section>
@@ -249,11 +282,10 @@
 const DEFAULT_OWNER = "pranab99";
 const DEFAULT_REPO = "CR-profile-";
 const DEFAULT_BRANCH = "main";
+const PLAYER_TAG = "#8LCULCYUP";
 const DB_FILENAME = "clash_royale_ladder.db";
 
 function getGhConfig(){
-  const stored = localStorage.getItem("cr_gh_config");
-  if(stored) return JSON.parse(stored);
   return { owner: DEFAULT_OWNER, repo: DEFAULT_REPO, branch: DEFAULT_BRANCH };
 }
 function dbUrl(cfg){
@@ -266,35 +298,7 @@ let currentRange = "all";
 /* ---------------- boot ---------------- */
 async function boot(){
   const cfg = getGhConfig();
-  if(!cfg.owner || cfg.owner === "YOUR_GITHUB_USERNAME"){
-    showSetupForm("Enter the GitHub repo that hosts your clash_royale_ladder.db.");
-    return;
-  }
   await loadFromGithub(cfg);
-}
-
-function showSetupForm(msg){
-  document.getElementById('gateSpinner').style.display = 'none';
-  document.getElementById('gateTitle').textContent = "Point this at your data";
-  document.getElementById('gateText').textContent = msg;
-  document.getElementById('gateForm').style.display = 'block';
-}
-
-function saveGhConfigAndLoad(){
-  const owner = document.getElementById('ghOwner').value.trim();
-  const repo = document.getElementById('ghRepo').value.trim();
-  const branch = document.getElementById('ghBranch').value.trim() || 'main';
-  if(!owner || !repo){
-    document.getElementById('gateErr').textContent = "Owner and repo are required.";
-    return;
-  }
-  const cfg = { owner, repo, branch };
-  localStorage.setItem("cr_gh_config", JSON.stringify(cfg));
-  document.getElementById('gateForm').style.display = 'none';
-  document.getElementById('gateSpinner').style.display = 'block';
-  document.getElementById('gateTitle').textContent = "Loading battle log…";
-  document.getElementById('gateText').textContent = "";
-  loadFromGithub(cfg);
 }
 
 async function loadFromGithub(cfg){
@@ -308,20 +312,24 @@ async function loadFromGithub(cfg){
     const db = new SQL.Database(new Uint8Array(buf));
 
     const result = db.exec("SELECT * FROM ladder_battles ORDER BY battleTime ASC");
-    if(!result.length){ throw new Error("Database has no ladder_battles rows yet."); }
-    const cols = result[0].columns;
-    ALL_ROWS = result[0].values.map(r => Object.fromEntries(cols.map((c,i) => [c, r[i]])));
+    if(result.length){
+      const cols = result[0].columns;
+      ALL_ROWS = result[0].values
+        .map(r => Object.fromEntries(cols.map((c,i) => [c, r[i]])))
+        .filter(r => !r.player_tag || r.player_tag === PLAYER_TAG);
+    }else{
+      ALL_ROWS = [];
+    }
 
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    document.getElementById('playerTagLabel').textContent = ALL_ROWS[ALL_ROWS.length-1].player_tag || "";
+    document.getElementById('playerTagLabel').textContent = PLAYER_TAG;
     setupRangePills();
     render();
   }catch(err){
     document.getElementById('gateSpinner').style.display = 'none';
     document.getElementById('gateTitle').textContent = "Couldn't load your data";
-    document.getElementById('gateText').textContent = err.message;
-    showSetupForm("Double-check the repo details, or wait for the first GitHub Action run to commit the .db file.");
+    document.getElementById('gateText').textContent = `${err.message} The dashboard is fixed to ${DEFAULT_OWNER}/${DEFAULT_REPO} on ${DEFAULT_BRANCH}.`;
   }
 }
 
@@ -357,14 +365,12 @@ let trophyChartInst, ringChartInst;
 function render(){
   const rows = filteredRows();
   if(!rows.length){
-    document.getElementById('heroGameCount').textContent = "0";
+    renderEmpty();
     return;
   }
 
-  const wins = rows.filter(r=>r.result==='Win').length;
-  const losses = rows.filter(r=>r.result==='Loss').length;
-  const draws = rows.filter(r=>r.result==='Draw').length;
-  const winRate = (wins/rows.length*100);
+  const summary = analyzeRows(rows);
+  const { wins, losses, draws, winRate } = summary;
 
   document.getElementById('winRateNum').textContent = winRate.toFixed(1)+'%';
   document.getElementById('ringNum').textContent = winRate.toFixed(0)+'%';
@@ -373,44 +379,220 @@ function render(){
   document.getElementById('statLosses').textContent = losses;
   document.getElementById('statDraws').textContent = draws;
 
-  renderStreak(rows);
+  renderPerformance(summary);
+  renderStreak(summary);
   renderRing(winRate);
-  renderTrophyChart(rows);
-  renderTiles(rows);
-  renderDecks(rows);
-  renderCardFreq(rows);
+  renderTrophyChart(rows, summary);
+  renderTiles(summary);
+  renderDecks(summary);
+  renderCardFreq(summary);
+  renderHours(summary);
   renderHeatmap(rows);
   renderLog(rows);
 }
 
-function renderStreak(rows){
-  // current streak: walk backwards from most recent
-  let streak = 0, type = null;
+function renderEmpty(){
+  document.getElementById('winRateNum').textContent = '0%';
+  document.getElementById('ringNum').textContent = '0%';
+  document.getElementById('heroGameCount').textContent = '0';
+  ['statWins','statLosses','statDraws'].forEach(id=>document.getElementById(id).textContent = '0');
+  ['tileStreak','tileTrophyNet','tileCrownDiff','tileElixir','tileTowers','tileCloseRate','tileTilt','tilePeak'].forEach(id=>document.getElementById(id).textContent = '-');
+  ['tileCurrentStreak','tileVelocity','tileCrowns','tileElixirRank','tileTiltMeta','tilePeakMeta'].forEach(id=>document.getElementById(id).textContent = 'waiting for battles');
+  document.getElementById('streakText').textContent = 'No battles logged yet';
+  document.getElementById('streakDot').style.background = 'var(--draw)';
+  document.getElementById('grade').textContent = '-';
+  document.getElementById('insightForm').textContent = '-';
+  document.getElementById('insightConsistency').textContent = '-';
+  document.getElementById('insightWindow').textContent = '-';
+  document.getElementById('insightDanger').textContent = '-';
+  document.getElementById('deckList').innerHTML = '<div class="empty">Run the GitHub Action once after adding your Clash Royale API secret. New battles will start filling this dashboard automatically.</div>';
+  document.getElementById('cardFreq').innerHTML = '';
+  document.getElementById('hourList').innerHTML = '<div class="empty">No hour data yet.</div>';
+  document.getElementById('battleLog').innerHTML = '<div class="empty">Your recent battles will appear here after the first successful fetch.</div>';
+  document.getElementById('trophyNote').textContent = 'waiting for first fetch';
+  renderRing(0);
+  renderTrophyChart([], null);
+  renderHeatmap([]);
+}
+
+function analyzeRows(rows){
+  const wins = rows.filter(r=>r.result==='Win').length;
+  const losses = rows.filter(r=>r.result==='Loss').length;
+  const draws = rows.filter(r=>r.result==='Draw').length;
+  const winRate = pct(wins, rows.length);
+  const trophyChanges = rows.map(r=>num(r.trophyChange));
+  const trophyNet = trophyChanges.reduce((s,n)=>s+n,0);
+  const currentTrophies = rows.map(r=>num(r.currentTrophies)).filter(Boolean);
+  const peak = currentTrophies.length ? Math.max(...currentTrophies) : 0;
+  const firstTrophy = currentTrophies[0] || 0;
+  const lastTrophy = currentTrophies.at(-1) || 0;
+  const elapsedDays = Math.max(1, (parseBattleTime(rows.at(-1).battleTime) - parseBattleTime(rows[0].battleTime)) / 86400000);
+  const velocity = trophyNet / elapsedDays;
+  const last10 = rows.slice(-10);
+  const formScore = weightedForm(last10);
+  const streak = currentStreak(rows);
+  const bestWinStreak = bestStreak(rows, 'Win');
+  const bestLossStreak = bestStreak(rows, 'Loss');
+  const crownDiffs = rows.map(r=>num(r.crowns)-num(r.opponent_crowns));
+  const crownDiff = avg(crownDiffs);
+  const closeGames = rows.filter(r=>Math.abs(num(r.crowns)-num(r.opponent_crowns)) <= 1);
+  const closeWins = closeGames.filter(r=>r.result === 'Win').length;
+  const closeRate = closeGames.length ? pct(closeWins, closeGames.length) : 0;
+  const elixir = avg(rows.map(r=>r.elixirLeaked).filter(v=>v!==null && v!==undefined));
+  const kingHp = avg(rows.map(r=>r.kingTowerHP).filter(v=>v!==null && v!==undefined));
+  const consistency = consistencyScore(rows);
+  const tiltRisk = tiltRiskScore(rows);
+  const decks = deckStats(rows);
+  const cards = cardStats(rows);
+  const hours = hourStats(rows);
+  const index = clamp((winRate * .38) + (formScore * .26) + (consistency * .18) + (Math.max(-20, Math.min(30, velocity)) + 20) * .18, 0, 100);
+
+  return { rows, wins, losses, draws, winRate, trophyNet, peak, firstTrophy, lastTrophy, velocity,
+    formScore, streak, bestWinStreak, bestLossStreak, crownDiff, closeRate, elixir, kingHp,
+    consistency, tiltRisk, decks, cards, hours, index };
+}
+
+function currentStreak(rows){
+  let count = 0, type = null;
   for(let i=rows.length-1;i>=0;i--){
-    const r = rows[i].result;
-    if(r==='Draw') break;
-    if(type===null){ type=r; streak=1; }
-    else if(r===type){ streak++; }
+    const result = rows[i].result;
+    if(result === 'Draw') break;
+    if(type === null){ type = result; count = 1; }
+    else if(result === type){ count++; }
     else break;
   }
+  return { count, type };
+}
+
+function bestStreak(rows, type){
+  let best = 0, run = 0;
+  rows.forEach(r=>{
+    if(r.result === type){ run++; best = Math.max(best, run); }
+    else run = 0;
+  });
+  return best;
+}
+
+function weightedForm(rows){
+  if(!rows.length) return 0;
+  let score = 0, weightTotal = 0;
+  rows.forEach((r,i)=>{
+    const weight = i + 1;
+    const base = r.result === 'Win' ? 100 : r.result === 'Draw' ? 45 : 0;
+    const trophyBoost = clamp(num(r.trophyChange), -35, 35) * .6;
+    score += clamp(base + trophyBoost, 0, 100) * weight;
+    weightTotal += weight;
+  });
+  return score / weightTotal;
+}
+
+function consistencyScore(rows){
+  if(rows.length < 4) return 50;
+  const changes = rows.map(r=>num(r.trophyChange));
+  const volatility = stdDev(changes);
+  const lossClusters = bestStreak(rows, 'Loss');
+  return clamp(100 - volatility * 1.35 - lossClusters * 8, 0, 100);
+}
+
+function tiltRiskScore(rows){
+  const recent = rows.slice(-12);
+  if(!recent.length) return 0;
+  const recentLosses = recent.filter(r=>r.result === 'Loss').length;
+  const recentNet = recent.reduce((s,r)=>s+num(r.trophyChange),0);
+  const cluster = bestStreak(recent, 'Loss');
+  return clamp(recentLosses * 7 + cluster * 13 + Math.max(0, -recentNet) * .45, 0, 100);
+}
+
+function deckStats(rows){
+  const groups = {};
+  rows.forEach(r=>{
+    const key = r.deck || 'Unknown';
+    if(!groups[key]) groups[key] = { deck:key, games:0, wins:0, losses:0, trophies:0, crownsFor:0, crownsAgainst:0 };
+    groups[key].games++;
+    groups[key].wins += r.result === 'Win' ? 1 : 0;
+    groups[key].losses += r.result === 'Loss' ? 1 : 0;
+    groups[key].trophies += num(r.trophyChange);
+    groups[key].crownsFor += num(r.crowns);
+    groups[key].crownsAgainst += num(r.opponent_crowns);
+  });
+  return Object.values(groups).map(d=>{
+    const wr = pct(d.wins, d.games);
+    const trophyAvg = d.trophies / d.games;
+    const crownAvg = (d.crownsFor - d.crownsAgainst) / d.games;
+    const sample = Math.min(1, Math.log2(d.games + 1) / 3);
+    const score = clamp(wr * .55 + (trophyAvg + 30) * .55 + (crownAvg + 3) * 6 + sample * 12, 0, 100);
+    return { ...d, wr, trophyAvg, crownAvg, score };
+  }).sort((a,b)=>b.score-a.score);
+}
+
+function cardStats(rows){
+  const groups = {};
+  rows.forEach(r=>{
+    (r.opponent_deck || '').split(' | ').filter(Boolean).forEach(card=>{
+      if(!groups[card]) groups[card] = { card, games:0, losses:0, trophies:0 };
+      groups[card].games++;
+      groups[card].losses += r.result === 'Loss' ? 1 : 0;
+      groups[card].trophies += num(r.trophyChange);
+    });
+  });
+  return Object.values(groups).map(c=>{
+    const lossRate = pct(c.losses, c.games);
+    const trophyAvg = c.trophies / c.games;
+    const danger = clamp(lossRate * .65 + Math.max(0, -trophyAvg) * 2.2 + Math.min(c.games, 12) * 2, 0, 100);
+    return { ...c, lossRate, trophyAvg, danger };
+  }).sort((a,b)=>b.danger-a.danger);
+}
+
+function hourStats(rows){
+  const buckets = Array.from({length:24}, (_,hour)=>({ hour, games:0, wins:0, trophies:0 }));
+  rows.forEach(r=>{
+    const hour = parseBattleTime(r.battleTime).getHours();
+    buckets[hour].games++;
+    buckets[hour].wins += r.result === 'Win' ? 1 : 0;
+    buckets[hour].trophies += num(r.trophyChange);
+  });
+  return buckets.map(h=>({
+    ...h,
+    wr: pct(h.wins, h.games),
+    trophyAvg: h.games ? h.trophies / h.games : 0,
+    score: h.games ? pct(h.wins, h.games) + (h.trophies / h.games) * 1.8 + Math.min(h.games, 10) * 2 : 0
+  })).sort((a,b)=>b.score-a.score);
+}
+
+function renderPerformance(summary){
+  const grade = summary.index >= 85 ? 'S' : summary.index >= 72 ? 'A' : summary.index >= 60 ? 'B' : summary.index >= 48 ? 'C' : 'D';
+  const bestHour = summary.hours.find(h=>h.games >= 2) || summary.hours.find(h=>h.games);
+  const danger = summary.cards.find(c=>c.games >= 2) || summary.cards[0];
+  document.getElementById('grade').textContent = grade;
+  document.getElementById('insightForm').textContent = Math.round(summary.formScore) + '/100';
+  document.getElementById('insightFormMeta').textContent = summary.formScore >= 70 ? 'hot' : summary.formScore >= 50 ? 'steady' : 'needs reset';
+  document.getElementById('insightConsistency').textContent = Math.round(summary.consistency) + '/100';
+  document.getElementById('insightConsistencyMeta').textContent = summary.bestLossStreak <= 2 ? 'stable' : `${summary.bestLossStreak} loss run`;
+  document.getElementById('insightWindow').textContent = bestHour ? hourLabel(bestHour.hour) : '-';
+  document.getElementById('insightWindowMeta').textContent = bestHour ? `${bestHour.wr.toFixed(0)}% WR` : 'no data';
+  document.getElementById('insightDanger').textContent = danger ? danger.card : '-';
+  document.getElementById('insightDangerMeta').textContent = danger ? `${danger.lossRate.toFixed(0)}% LR` : 'no data';
+}
+
+function renderStreak(summary){
+  const { count, type } = summary.streak;
   const dot = document.getElementById('streakDot');
   const text = document.getElementById('streakText');
-  if(streak===0){ text.textContent = 'No active streak'; dot.style.background='var(--draw)'; }
+  if(count===0){ text.textContent = 'No active streak'; dot.style.background='var(--draw)'; }
   else{
-    text.textContent = `${streak} ${type==='Win'?'win':'loss'}${streak>1?'s':''} in a row`;
+    text.textContent = `${count} ${type==='Win'?'win':'loss'}${count>1?'s':''} in a row`;
     dot.style.background = type==='Win' ? 'var(--win)' : 'var(--loss)';
   }
-
-  // best win streak
-  let best=0, run=0;
-  rows.forEach(r=>{
-    if(r.result==='Win'){ run++; best=Math.max(best,run); } else run=0;
-  });
-  document.getElementById('tileStreak').textContent = best;
+  document.getElementById('tileStreak').textContent = summary.bestWinStreak;
+  document.getElementById('tileCurrentStreak').textContent = count ? `current: ${count} ${type.toLowerCase()}` : 'no active streak';
 }
 
 function renderRing(winRate){
   const ctx = document.getElementById('ringChart');
+  if(!window.Chart){
+    drawRingFallback(ctx, winRate);
+    return;
+  }
   if(ringChartInst) ringChartInst.destroy();
   ringChartInst = new Chart(ctx, {
     type:'doughnut',
@@ -419,103 +601,110 @@ function renderRing(winRate){
   });
 }
 
-function renderTrophyChart(rows){
-  const labels = rows.map(r=>parseBattleTime(r.battleTime));
-  const data = rows.map(r=>r.currentTrophies);
+function renderTrophyChart(rows, summary){
+  const labels = rows.map(r=>shortDate(parseBattleTime(r.battleTime)));
+  const data = rows.map(r=>num(r.currentTrophies));
   const ctx = document.getElementById('trophyChart');
+  if(!window.Chart){
+    drawLineFallback(ctx, data);
+    if(summary){
+      document.getElementById('trophyNote').textContent = `${signed(summary.trophyNet)} trophies, ${signed(summary.velocity.toFixed(1))}/day`;
+    }
+    return;
+  }
   if(trophyChartInst) trophyChartInst.destroy();
   trophyChartInst = new Chart(ctx, {
     type:'line',
     data:{ labels, datasets:[{
-      data, borderColor:'#F5B942', borderWidth:2, pointRadius:0, tension:.3,
+      data, borderColor:'#f3ba4d', borderWidth:2, pointRadius:0, tension:.3,
       fill:true, backgroundColor:(c)=>{
         const g = c.chart.ctx.createLinearGradient(0,0,0,220);
-        g.addColorStop(0,'rgba(245,185,66,0.25)'); g.addColorStop(1,'rgba(245,185,66,0)');
+        g.addColorStop(0,'rgba(243,186,77,0.22)'); g.addColorStop(1,'rgba(243,186,77,0)');
         return g;
       }
     }]},
     options:{
       responsive:true,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ title:(items)=> items[0].label } } },
+      plugins:{ legend:{display:false} },
       scales:{
-        x:{ type:'time', time:{ unit: rows.length>200?'week':'day' }, grid:{ color:'#1C2247' }, ticks:{ color:'#8A8FBF', maxTicksLimit:8 } },
-        y:{ grid:{ color:'#1C2247' }, ticks:{ color:'#8A8FBF' } }
+        x:{ grid:{ color:'#1d252d' }, ticks:{ color:'#8f9ba8', maxTicksLimit:8 } },
+        y:{ grid:{ color:'#1d252d' }, ticks:{ color:'#8f9ba8' } }
       }
     }
   });
-  const net = data[data.length-1] - data[0];
-  document.getElementById('trophyNote').textContent = `${net>=0?'+':''}${net} trophies over this range`;
+  if(summary){
+    document.getElementById('trophyNote').textContent = `${signed(summary.trophyNet)} trophies, ${signed(summary.velocity.toFixed(1))}/day`;
+  }
 }
 
-function renderTiles(rows){
-  const crownDiff = avg(rows.map(r=>(r.crowns||0)-(r.opponent_crowns||0)));
-  const elixir = avg(rows.map(r=>r.elixirLeaked).filter(v=>v!=null));
-  const netTrophy = rows.reduce((s,r)=>s+(r.trophyChange||0),0);
-  const kingHp = avg(rows.map(r=>r.kingTowerHP).filter(v=>v!=null));
-
-  document.getElementById('tileCrownDiff').textContent = (crownDiff>=0?'+':'')+crownDiff.toFixed(1);
-  document.getElementById('tileElixir').textContent = elixir.toFixed(1);
-  document.getElementById('tileTrophyNet').textContent = (netTrophy>=0?'+':'')+netTrophy;
-  document.getElementById('tileTowers').textContent = Math.round(kingHp);
+function renderTiles(summary){
+  document.getElementById('tileCrownDiff').textContent = signed(summary.crownDiff.toFixed(1));
+  document.getElementById('tileCrowns').textContent = summary.crownDiff >= 0 ? 'winning tower trades' : 'losing tower trades';
+  document.getElementById('tileElixir').textContent = summary.elixir.toFixed(1);
+  document.getElementById('tileElixirRank').textContent = summary.elixir <= 1 ? 'clean cycles' : summary.elixir <= 2.5 ? 'manageable leaks' : 'tighten rotations';
+  document.getElementById('tileTrophyNet').textContent = signed(summary.trophyNet);
+  document.getElementById('tileVelocity').textContent = `${signed(summary.velocity.toFixed(1))} trophies/day`;
+  document.getElementById('tileTowers').textContent = Math.round(summary.kingHp);
+  document.getElementById('tileCloseRate').textContent = summary.closeRate.toFixed(0) + '%';
+  document.getElementById('tileTilt').textContent = Math.round(summary.tiltRisk) + '/100';
+  document.getElementById('tileTiltMeta').textContent = summary.tiltRisk < 35 ? 'controlled' : summary.tiltRisk < 65 ? 'watch streaks' : 'take breaks';
+  document.getElementById('tilePeak').textContent = summary.peak || '-';
+  document.getElementById('tilePeakMeta').textContent = summary.lastTrophy ? `${signed(summary.lastTrophy - summary.peak)} from peak` : 'no trophy data';
 }
 
 function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 
-function renderDecks(rows){
-  const groups = {};
-  rows.forEach(r=>{
-    const key = r.deck || 'Unknown';
-    if(!groups[key]) groups[key] = { games:0, wins:0 };
-    groups[key].games++;
-    if(r.result==='Win') groups[key].wins++;
-  });
-  const decks = Object.entries(groups)
-    .filter(([,v])=>v.games>=3)
-    .map(([deck,v])=>({ deck, ...v, wr: v.wins/v.games*100 }))
-    .sort((a,b)=>b.wr-a.wr)
-    .slice(0,8);
-
+function renderDecks(summary){
+  const decks = summary.decks.filter(d=>d.games>=2).slice(0,8);
   const el = document.getElementById('deckList');
-  if(!decks.length){ el.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">Not enough repeated decks yet in this range.</p>'; return; }
+  if(!decks.length){ el.innerHTML = '<div class="empty">Not enough repeated decks yet in this range.</div>'; return; }
   el.innerHTML = decks.map(d => `
     <div class="deck-row">
-      <div class="deck-cards">${d.deck.split(' | ').join(' · ')}</div>
-      <div class="deck-games">${d.games} games</div>
+      <div><div class="deck-cards">${esc(d.deck).split(' | ').join(' · ')}</div><div class="deck-score">deck score ${d.score.toFixed(0)} · ${signed(d.trophyAvg.toFixed(1))} trophies/game · ${signed(d.crownAvg.toFixed(1))} crowns/game</div></div>
+      <div class="deck-games">${d.games} games · ${d.wins}-${d.losses}</div>
       <div style="display:flex;align-items:center;gap:.6rem;">
-        <div class="bar-wrap"><div class="bar-fill" style="width:${d.wr}%"></div></div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${clamp(d.score,0,100)}%"></div></div>
         <div class="deck-wr">${d.wr.toFixed(0)}%</div>
       </div>
     </div>
   `).join('');
 }
 
-function renderCardFreq(rows){
-  const counts = {};
-  rows.forEach(r=>{
-    (r.opponent_deck||'').split(' | ').filter(Boolean).forEach(card=>{
-      counts[card] = (counts[card]||0) + 1;
-    });
-  });
-  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const max = top.length ? top[0][1] : 1;
-  document.getElementById('cardFreq').innerHTML = top.map(([card,n])=>`
-    <div class="cf-row">
+function renderCardFreq(summary){
+  const top = summary.cards.slice(0,10);
+  const max = top.length ? Math.max(...top.map(c=>c.danger)) : 1;
+  document.getElementById('cardFreq').innerHTML = top.map(c=>`
+    <div class="cf-row danger">
       <div>
-        <div>${card}</div>
-        <div class="cf-bar"><div class="cf-fill" style="width:${n/max*100}%"></div></div>
+        <div>${esc(c.card)}</div>
+        <div class="cf-bar"><div class="cf-fill" style="width:${c.danger/max*100}%"></div></div>
       </div>
-      <div class="cf-n">${n}×</div>
+      <div class="cf-n">${c.lossRate.toFixed(0)}%</div>
+    </div>
+  `).join('');
+}
+
+function renderHours(summary){
+  const hours = summary.hours.filter(h=>h.games).slice(0,6);
+  const max = hours.length ? Math.max(...hours.map(h=>h.score)) : 1;
+  const el = document.getElementById('hourList');
+  if(!hours.length){ el.innerHTML = '<div class="empty">No hour data yet.</div>'; return; }
+  el.innerHTML = hours.map(h=>`
+    <div class="hour-row">
+      <div>${hourLabel(h.hour)}</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${h.score/max*100}%"></div></div>
+      <div class="cf-n">${h.wr.toFixed(0)}%</div>
     </div>
   `).join('');
 }
 
 function renderHeatmap(rows){
   const buckets = new Array(24).fill(0);
-  rows.forEach(r=>{ buckets[parseBattleTime(r.battleTime).getUTCHours()]++; });
+  rows.forEach(r=>{ buckets[parseBattleTime(r.battleTime).getHours()]++; });
   const max = Math.max(...buckets,1);
   document.getElementById('heatmap').innerHTML = buckets.map((n,h)=>{
     const alpha = n===0 ? 0.08 : 0.15 + (n/max)*0.85;
-    return `<div class="hm-cell" title="${String(h).padStart(2,'0')}:00 UTC — ${n} games" style="background:rgba(168,85,247,${alpha})"></div>`;
+    return `<div class="hm-cell" title="${hourLabel(h)} - ${n} games" style="background:rgba(56,214,176,${alpha})"></div>`;
   }).join('');
 }
 
@@ -529,12 +718,93 @@ function renderLog(rows){
     return `
       <div class="log-row">
         <div class="res-dot" style="background:${color}"></div>
-        <div class="log-opp">${r.opponent_name || 'Unknown'} <span class="tag">${dateStr}</span></div>
-        <div class="log-crowns">${r.crowns}–${r.opponent_crowns}</div>
+        <div class="log-opp">${esc(r.opponent_name || 'Unknown')} <span class="tag">${dateStr} · ${esc(r.gameMode || 'battle')}</span></div>
+        <div class="log-crowns">${num(r.crowns)}-${num(r.opponent_crowns)}</div>
         <div class="log-trophy ${tcClass}">${r.trophyChange>0?'+':''}${r.trophyChange}</div>
       </div>
     `;
   }).join('');
+}
+
+function num(value){ return Number(value || 0); }
+function pct(part,total){ return total ? part / total * 100 : 0; }
+function clamp(value,min,max){ return Math.max(min, Math.min(max, value)); }
+function signed(value){
+  const n = Number(value);
+  return n > 0 ? `+${value}` : String(value);
+}
+function stdDev(values){
+  if(values.length < 2) return 0;
+  const mean = avg(values);
+  return Math.sqrt(avg(values.map(v => Math.pow(v - mean, 2))));
+}
+function esc(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function shortDate(date){
+  return date.toLocaleDateString(undefined, { month:'short', day:'numeric' });
+}
+function hourLabel(hour){
+  return new Date(2024,0,1,hour).toLocaleTimeString(undefined, { hour:'numeric' }).replace(' ', '');
+}
+
+function prepCanvas(canvas){
+  const ratio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || canvas.clientWidth || 300;
+  const height = rect.height || Number(canvas.getAttribute('height')) || 180;
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  return { ctx, width, height };
+}
+
+function drawRingFallback(canvas, winRate){
+  const { ctx, width, height } = prepCanvas(canvas);
+  const size = Math.min(width, height) * .72;
+  const x = width / 2;
+  const y = height / 2;
+  const start = -Math.PI / 2;
+  ctx.clearRect(0, 0, width, height);
+  ctx.lineWidth = Math.max(16, size * .14);
+  ctx.strokeStyle = '#1d252d';
+  ctx.beginPath();
+  ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = '#36d399';
+  ctx.beginPath();
+  ctx.arc(x, y, size / 2, start, start + Math.PI * 2 * clamp(winRate, 0, 100) / 100);
+  ctx.stroke();
+}
+
+function drawLineFallback(canvas, data){
+  const { ctx, width, height } = prepCanvas(canvas);
+  const pad = 18;
+  ctx.clearRect(0, 0, width, height);
+  ctx.strokeStyle = '#1d252d';
+  ctx.lineWidth = 1;
+  for(let i=0;i<4;i++){
+    const y = pad + (height - pad * 2) * i / 3;
+    ctx.beginPath();
+    ctx.moveTo(pad, y);
+    ctx.lineTo(width - pad, y);
+    ctx.stroke();
+  }
+  if(data.length < 2) return;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const span = Math.max(1, max - min);
+  ctx.strokeStyle = '#f3ba4d';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  data.forEach((value, i)=>{
+    const x = pad + (width - pad * 2) * i / (data.length - 1);
+    const y = height - pad - ((value - min) / span) * (height - pad * 2);
+    if(i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
 }
 
 boot();
