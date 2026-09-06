@@ -10,11 +10,11 @@ from GitHub and renders win rate, trophy trend, deck performance, and more
 
 1. Go to https://developer.clashroyale.com and sign in / register.
 2. Create a new API key.
-3. **IP address:** leave this key with **no IP restriction** (or a wide-open one).
-   GitHub Actions runners don't have static IPs, so a locked-down key won't
-   work — that's why the logger calls `https://proxy.royaleapi.dev` instead
-   of the API directly. The proxy forwards your key from a fixed IP range
-   that's pre-whitelisted by Supercell.
+3. **Allowed IP address:** enter `45.79.218.79`.
+   GitHub Actions runners don't have static IPs, so the logger calls
+   `https://proxy.royaleapi.dev` instead of the API directly. RoyaleAPI's
+   proxy forwards the request from `45.79.218.79`, so that exact IP must be
+   whitelisted on the key.
 4. Copy the key (a long JWT string) — this is your `CR_BEARER_TOKEN`.
 5. Your player tag (e.g. `#2Y8V0PJGV`) is your `CR_PLAYER_TAG`. Find it in-game
    under your profile.
@@ -73,7 +73,7 @@ redeploy for new battle data to show up.
 | File | Purpose |
 |---|---|
 | `clash_logger.py` | Fetches your last ~25 ladder battles from the CR API, appends new ones to `clash_royale_ladder.db` (dedupes on player+battleTime) |
-| `.github/workflows/update-db.yml` | Runs the logger every 30 min and commits the updated DB |
+| `.github/workflows/static.yml` | Runs the logger every 30 min and commits the updated DB |
 | `index.html` | The dashboard — loads the DB with sql.js (SQLite compiled to WASM) directly in the browser |
 | `vercel.json` | Tells Vercel this is a static site, no build step |
 

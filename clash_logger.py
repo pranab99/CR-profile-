@@ -6,27 +6,27 @@ RoyaleAPI proxy, which is required for calls made from GitHub Actions
 since runner IPs aren't static and can't be whitelisted on your API key)
 and appends any battles not already in clash_royale_ladder.db.
 
-Run on a schedule (see .github/workflows/update-db.yml) so the battle
+Run on a schedule (see .github/workflows/static.yml) so the battle
 log accumulates over time instead of only holding the last 25 games.
 
 Env vars required:
   CR_PLAYER_TAG    e.g. "#2Y8V0PJGV" (URL-encoding of '#' is handled here)
   CR_BEARER_TOKEN  API key generated at developer.clashroyale.com,
-                    with no IP restriction (proxy IPs are dynamic)
+                    with 45.79.218.79 whitelisted when using RoyaleAPI proxy
 """
 
 import json
 import os
 import sqlite3
 from datetime import datetime
+from urllib.parse import quote
 
 import requests
 
-PLAYER_TAG_RAW = "#8LCULCYUP"
-BEARER_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6ImYxMDU5MmI1LWRmM2EtNDFhYi05ZTk4LTYyZjkxZWYwNTQ1YSIsImlhdCI6MTc4ODI4MzExOCwic3ViIjoiZGV2ZWxvcGVyL2VhOGYwYjY3LTExYWMtNDRmMi1iN2VmLTBlY2U3ZjA2M2RkYyIsInNjb3BlcyI6WyJyb3lhbGUiXSwibGltaXRzIjpbeyJ0aWVyIjoiZGV2ZWxvcGVyL3NpbHZlciIsInR5cGUiOiJ0aHJvdHRsaW5nIn0seyJjaWRycyI6WyIwLjAuMC4wIl0sInR5cGUiOiJjbGllbnQifV19.pHs4ZusffwM_4TQBSKSqhR1_1YsLhYEV7mVOeF-1TimEX-4TvDspRKRZezsb4eUrwVywX3INjSd3A2VuMkaZDg" 
-
-#this is my JWT for clash royale")
-PLAYER_TAG_URL = PLAYER_TAG_RAW.replace("#", "%23")
+PLAYER_TAG_RAW = os.environ.get("CR_PLAYER_TAG", "").strip()
+BEARER_TOKEN = os.environ.get("CR_BEARER_TOKEN", "").strip()
+API_BASE_URL = os.environ.get("CR_API_BASE_URL", "https://proxy.royaleapi.dev/v1").rstrip("/")
+PLAYER_TAG_URL = quote(PLAYER_TAG_RAW, safe="")
 DB_PATH = "clash_royale_ladder.db"
 
 SCHEMA = """
@@ -53,10 +53,21 @@ CREATE TABLE IF NOT EXISTS ladder_battles (
 )
 """
 
+SCHEMA_MIGRATIONS = {
+    "gameMode": "ALTER TABLE ladder_battles ADD COLUMN gameMode TEXT",
+    "opponent_crowns": "ALTER TABLE ladder_battles ADD COLUMN opponent_crowns INTEGER",
+}
+
 
 def init_database():
     conn = sqlite3.connect(DB_PATH)
     conn.execute(SCHEMA)
+    existing_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(ladder_battles)").fetchall()
+    }
+    for column, statement in SCHEMA_MIGRATIONS.items():
+        if column not in existing_columns:
+            conn.execute(statement)
     conn.commit()
     conn.close()
 
@@ -68,12 +79,24 @@ def format_deck(cards):
 
 
 def fetch_and_process_battles():
-    api_url = f"https://proxy.royaleapi.dev/v1/players/{PLAYER_TAG_URL}/battlelog"
-    headers = {"Authorization": f"Bearer {BEARER_TOKEN}"}
+    api_url = f"{API_BASE_URL}/players/{PLAYER_TAG_URL}/battlelog"
+    headers = {"Accept": "application/json", "Authorization": f"Bearer {BEARER_TOKEN}"}
     print(f"[{datetime.now()}] Fetching battle log for {PLAYER_TAG_RAW}...")
 
     response = requests.get(api_url, headers=headers, timeout=30)
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as exc:
+        detail = response.text[:500].strip()
+        if response.status_code == 403 and "proxy.royaleapi.dev" in API_BASE_URL:
+            detail = (
+                f"{detail}\n\n"
+                "403 from RoyaleAPI proxy usually means the Clash Royale API key "
+                "does not whitelist the proxy IP. Create a new key at "
+                "developer.clashroyale.com with allowed IP 45.79.218.79, then "
+                "save that token as the CR_BEARER_TOKEN GitHub Actions secret."
+            )
+        raise RuntimeError(f"Clash Royale API request failed: {exc}\n{detail}") from exc
     battles = response.json()
 
     processed = []
