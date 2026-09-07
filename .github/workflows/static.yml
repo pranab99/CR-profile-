@@ -2,7 +2,7 @@ name: Update Clash Royale ladder DB
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/59 * * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -28,8 +28,8 @@ jobs:
 
       - name: Run logger
         env:
-          CR_PLAYER_TAG: ${{ secrets.CR_PLAYER_TAG }}
-          CR_BEARER_TOKEN: ${{ secrets.CR_BEARER_TOKEN }}
+          PLAYER_TAG_RAW: ${{ secrets.CR_PLAYER_TAG }}
+          BEARER_TOKEN: ${{ secrets.CR_BEARER_TOKEN }}
         run: python clash_logger.py
 
       - name: Commit updated database
