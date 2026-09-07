@@ -533,9 +533,7 @@ function normalizeTag(tag){
 
 function isLadder(r){
   const mode = (r.gameMode || '').toLowerCase();
-  if(mode === 'ladder' || mode === 'ladder_crownrush' || mode === 'ranked1v1') return true;
-  if(r.currentTrophies != null && Number(r.currentTrophies) > 0 && r.trophyChange != null && Number(r.trophyChange) !== 0) return true;
-  return false;
+  return mode === 'ladder' || mode === 'ladder_crownrush' || mode === 'ranked1v1';
 }
 
 function isKing007(r){
