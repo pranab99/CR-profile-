@@ -3,7 +3,7 @@ name: Update Clash Royale ladder DB
 on:
   schedule:
     # Every 30 minutes. GitHub may delay this slightly under load.
-    - cron: "*/30 * * * *"
+    - cron: "*/60 * * * *"
   workflow_dispatch: {}
 
 permissions:
