@@ -2,20 +2,16 @@ name: Update Clash Royale ladder DB
 
 on:
   schedule:
-    - cron: "*/59 * * * *"
+    # Every 30 minutes. GitHub may delay this slightly under load.
+    - cron: "*/30 * * * *"
   workflow_dispatch: {}
 
 permissions:
   contents: write
 
-concurrency:
-  group: clash-royale-db
-  cancel-in-progress: false
-
 jobs:
   fetch-and-commit:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -28,15 +24,41 @@ jobs:
 
       - name: Run logger
         env:
-          PLAYER_TAG_RAW: ${{ secrets.CR_PLAYER_TAG }}
-          BEARER_TOKEN: ${{ secrets.CR_BEARER_TOKEN }}
+          CR_PLAYER_TAG: ${{ secrets.CR_PLAYER_TAG }}
+          CR_BEARER_TOKEN: ${{ secrets.CR_BEARER_TOKEN }}
         run: python clash_logger.py
 
-      - name: Commit updated database
+      - name: Commit and push (retry on race with other pushes)
         run: |
           git config user.name "cr-tracker-bot"
           git config user.email "actions@users.noreply.github.com"
           git add clash_royale_ladder.db
-          git diff --staged --quiet || git commit -m "Update ladder battle log [skip ci]"
-          git pull origin main
-          git push
+
+          if git diff --staged --quiet; then
+            echo "No new battles, nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "Update ladder battle log [skip ci]"
+
+          # Retry a few times: fetch + rebase onto whatever is newest on
+          # origin/main, then push. This handles the case where a manual
+          # push or another run landed a commit between our checkout and
+          # our push.
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "Pushed successfully."
+              exit 0
+            fi
+            echo "Push rejected (attempt $i) — fetching and rebasing onto origin/main..."
+            git fetch origin main
+            git rebase origin/main || {
+              echo "Rebase conflict — aborting rebase, keeping this run's commit unpushed."
+              git rebase --abort
+              exit 1
+            }
+            sleep $((RANDOM % 10 + 1))
+          done
+
+          echo "Failed to push after retries."
+          exit 1
