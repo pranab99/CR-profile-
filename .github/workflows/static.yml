@@ -38,4 +38,5 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add clash_royale_ladder.db
           git diff --staged --quiet || git commit -m "Update ladder battle log [skip ci]"
+          git pull origin main
           git push
